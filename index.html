@@ -1,1 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>內灣限定轉盤抽獎</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
 
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .game-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin-bottom: 30px;
+        }
+
+        /* 轉盤本體 (Canvas) */
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); /* 旋轉動畫 */
+        }
+
+        /* 指針 */
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 35px solid #ff3e3e;
+            z-index: 10;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+        }
+
+        /* 按鈕區域 */
+        .controls {
+            text-align: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            border: none;
+            padding: 15px 40px;
+            color: white;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 結果視窗 */
+        #resultModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 80%;
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .prize-title {
+            font-size: 1.5rem;
+            color: #d32f2f;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .prize-desc {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .close-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>幸運轉盤抽獎</h1>
+
+    <div class="game-container">
+        <div class="pointer"></div>
+        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+    </div>
+
+    <div class="controls">
+        <button id="spinBtn" onclick="spinWheel()">開始抽獎</button>
+    </div>
+
+    <div id="resultModal">
+        <div class="modal-content">
+            <h2>🎉 恭喜獲得 🎉</h2>
+            <div class="prize-title" id="modalPrizeName">獎品名稱</div>
+            <div class="prize-desc" id="modalPrizeDesc"></div>
+            <button class="close-btn" onclick="closeModal()">確定</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 設定區 ---
+        // 為了讓轉盤文字簡潔，我將「顯示名稱」簡化，完整名稱放在 fullText
+        const prizes = [
+            { id: 1, text: "買一送一", fullText: "咖啡各品項買一送一（限當日）", prob: 0.15, color: "#FFDDC1" },
+            { id: 2, text: "鑰匙圈(吊橋)", fullText: "內灣限定壓克力鑰匙圈（吊橋款）", prob: 0.15, color: "#FFABAB" },
+            { id: 3, text: "米餅一片", fullText: "米餅一片", prob: 0.20, color: "#FFC3A0" },
+            { id: 4, text: "濾掛咖啡", fullText: "濾掛咖啡一包", prob: 0.10, color: "#D5AAFF" },
+            { id: 5, text: "美式一杯", fullText: "美式一杯（限當日）", prob: 0.08, color: "#85E3FF" },
+            { id: 6, text: "鑰匙圈(車站)", fullText: "內灣限定壓克力鑰匙圈（車站款）", prob: 0.15, color: "#B9F6CA" },
+            { id: 7, text: "折抵金40", fullText: "文創商品折抵金40元（限當日使用）", prob: 0.05, color: "#FFFFD1" },
+            { id: 8, text: "折抵金50", fullText: "全店商品折抵金50元（不限金額，不累加，限當日使用）", prob: 0.02, color: "#E2F0CB" }
+        ];
+
+        // 計算總權重 (您的數據加總為 0.9)
+        const totalProb = prizes.reduce((sum, item) => sum + item.prob, 0);
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const size = 500; // Canvas 解析度
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = size / 2;
+        
+        let currentRotation = 0; // 當前旋轉角度
+        let isSpinning = false;
+
+        // --- 繪製轉盤 ---
+        function drawWheel() {
+            const sliceAngle = (2 * Math.PI) / prizes.length; // 視覺上均分扇形 (8等分)
+
+            prizes.forEach((prize, i) => {
+                const startAngle = i * sliceAngle - Math.PI / 2; // -90度讓第一個扇形從正上方開始
+                const endAngle = startAngle + sliceAngle;
+
+                // 畫扇形
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.fillStyle = prize.color;
+                ctx.fill();
+                ctx.stroke();
+
+                // 畫文字
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#333";
+                ctx.font = "bold 24px Arial";
+                ctx.fillText(prize.text, radius - 40, 10);
+                ctx.restore();
+            });
+        }
+
+        // --- 抽獎邏輯 ---
+        function getPrizeIndex() {
+            // 產生 0 ~ totalProb 之間的隨機數 (這樣就不用強迫加總要是1)
+            let random = Math.random() * totalProb;
+            
+            for (let i = 0; i < prizes.length; i++) {
+                if (random < prizes[i].prob) {
+                    return i;
+                }
+                random -= prizes[i].prob;
+            }
+            return prizes.length - 1; // 防呆
+        }
+
+        // --- 旋轉功能 ---
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+
+            const winningIndex = getPrizeIndex();
+            const sliceAngle = 360 / prizes.length;
+            
+            // 計算目標角度
+            // 邏輯：指針固定在上方(0度/360度)，我們要算轉盤要轉多少度才能讓獎品停在上方
+            // 因為扇形是順時針畫的，且Canvas本身在旋轉，所以要反向思考
+            
+            // 目標是讓 winningIndex 的扇形中心對準上方
+            // 每個扇形中心點角度 (相對於起始點 0): (Index * sliceAngle) + (sliceAngle / 2)
+            // 加上基礎旋轉圈數 (至少轉 5 圈 = 1800度)
+            // 我們需要反轉 Canvas 讓該扇形到達 0 度位置 (實際上 CSS rotate 是順時針)
+            // 公式： 360 - (扇形中心角度) + 多圈旋轉
+            
+            const prizeCenterAngle = (winningIndex * sliceAngle) + (sliceAngle / 2);
+            const extraSpins = 360 * 5; // 至少轉5圈
+            const targetRotation = currentRotation + extraSpins + (360 - (prizeCenterAngle % 360));
+            
+            // 由於每次都是累積旋轉，我們需要校正到正確的相對位置
+            // 這裡簡化邏輯：直接算新的絕對角度
+            // CSS transform 會處理平滑過渡
+            
+            // 修正：計算落點的隨機偏移 (讓指針不總是停在扇形正中間，增加真實感)
+            const randomOffset = Math.floor(Math.random() * (sliceAngle - 10)) - (sliceAngle/2 - 5); 
+            
+            const finalRotate = currentRotation + extraSpins + (360 - prizeCenterAngle) + randomOffset;
+
+            // 執行 CSS 動畫
+            canvas.style.transform = `rotate(${finalRotate}deg)`;
+            currentRotation = finalRotate; // 更新當前角度供下次使用
+
+            // 等待動畫結束顯示結果 (4秒)
+            setTimeout(() => {
+                isSpinning = false;
+                document.getElementById('spinBtn').disabled = false;
+                showResult(prizes[winningIndex]);
+            }, 4000);
+        }
+
+        function showResult(prize) {
+            document.getElementById('modalPrizeName').innerText = prize.text;
+            document.getElementById('modalPrizeDesc').innerText = prize.fullText;
+            document.getElementById('resultModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+
+        // 初始化繪製
+        drawWheel();
+
+    </script>
+</body>
+</html>
