@@ -2,98 +2,160 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>內灣限定轉盤抽獎 V2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聖誕轉盤抽獎</title>
     <style>
+        :root {
+            --christmas-red: #D32F2F;
+            --christmas-green: #2E7D32;
+            --christmas-gold: #FFD700;
+            --bg-gradient: radial-gradient(circle, #8E0E00, #1F1C18);
+        }
+
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: #f0f2f5;
+            background: var(--bg-gradient);
+            color: white;
+            margin: 0;
+            padding: 0;
+            height: 100vh; /* 佔滿全螢幕高度 */
+            width: 100vw;
+            overflow: hidden; /* 禁止捲動 */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow-x: hidden;
+        }
+
+        /* 主容器：負責排版 */
+        .main-wrapper {
+            display: flex;
+            flex-direction: column; /* 預設直向 */
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
         }
 
         h1 {
-            color: #333;
-            margin-bottom: 20px;
+            color: var(--christmas-gold);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            margin: 10px 0;
+            font-size: 1.8rem;
             text-align: center;
         }
 
+        /* 轉盤容器 */
         .game-container {
             position: relative;
-            width: 350px;
-            height: 350px;
-            margin-bottom: 30px;
+            /* 關鍵：使用 vmin 單位，確保轉盤永遠不會超出螢幕短邊 */
+            width: 80vmin; 
+            height: 80vmin;
+            max-width: 500px;
+            max-height: 500px;
+            margin: 10px auto;
+            flex-shrink: 0; /* 防止被擠壓 */
         }
 
-        /* 轉盤本體 (Canvas) */
         #wheelCanvas {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            /* 這裡的 transition 我們會在 JS 中動態設定，確保旋轉曲線更自然 */
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); /* 金色光暈 */
+            border: 8px solid #F8B400; /* 金色外框 */
+            box-sizing: border-box;
         }
 
-        /* 指針：固定在上方 (12點鐘方向) */
+        /* 指針 */
         .pointer {
             position: absolute;
-            top: -25px;
+            top: -15%; /* 根據相對位置調整 */
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            width: 40px;
-            height: 50px;
-            /* 使用 SVG 或 CSS 畫一個更精緻的倒三角 */
-        }
-        
-        .pointer::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10px;
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 30px solid #ff3e3e;
-            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+            width: 10vmin;
+            height: 12vmin;
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='50' viewBox='0 0 40 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 50L0 10C0 4.5 4.5 0 10 0H30C35.5 0 40 4.5 40 10L20 50Z' fill='%23FF3E3E' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
         }
 
-        /* 按鈕區域 */
+        /* 控制區 */
         .controls {
             text-align: center;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        button {
-            background: linear-gradient(135deg, #6e8efb, #a777e3);
-            border: none;
-            padding: 15px 40px;
-            color: white;
-            font-size: 1.2rem;
-            border-radius: 30px;
+        #spinBtn {
+            background: linear-gradient(180deg, #FFD700, #FDB931);
+            border: 2px solid #FFF;
+            padding: 15px 50px;
+            color: #8B0000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 6px 0 #B8860B, 0 10px 10px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
         }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        #spinBtn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #B8860B, 0 4px 4px rgba(0,0,0,0.3);
         }
 
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
+        #spinBtn:disabled {
+            background: #999;
             box-shadow: none;
+            color: #555;
+            cursor: not-allowed;
         }
 
-        /* 結果視窗 */
+        /* 全螢幕按鈕 (小小的放在角落或下方) */
+        .fullscreen-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* --- 橫向模式 (Landscape) 專用佈局 --- */
+        @media (orientation: landscape) {
+            .main-wrapper {
+                flex-direction: row; /* 改為左右排列 */
+                justify-content: space-evenly;
+                gap: 20px;
+            }
+
+            .game-container {
+                /* 橫向時，轉盤佔據高度的 85% */
+                width: 85vh;
+                height: 85vh;
+                margin: 0;
+            }
+
+            .info-panel {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                max-width: 300px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+                margin-bottom: 30px;
+            }
+        }
+
+        /* 結果彈窗 */
         #resultModal {
             display: none;
             position: fixed;
@@ -101,109 +163,110 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.8);
             z-index: 100;
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(5px);
         }
 
         .modal-content {
-            background: white;
+            background: linear-gradient(135deg, #fff, #f0f0f0);
             padding: 30px;
-            border-radius: 15px;
+            border-radius: 20px;
             text-align: center;
             max-width: 80%;
             width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            animation: popIn 0.3s ease-out;
-        }
-
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.4);
+            border: 4px solid #D32F2F;
+            color: #333;
         }
 
         .prize-title {
-            font-size: 1.5rem;
-            color: #d32f2f;
-            margin: 10px 0;
+            font-size: 1.8rem;
+            color: #D32F2F;
+            margin: 15px 0;
             font-weight: bold;
         }
 
         .prize-desc {
-            color: #666;
-            margin-bottom: 20px;
-            line-height: 1.5;
-            white-space: pre-wrap; /* 保留換行 */
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            white-space: pre-wrap;
         }
 
         .close-btn {
-            background: #333;
+            background: #2E7D32;
             color: white;
             border: none;
-            padding: 10px 25px;
-            border-radius: 5px;
+            padding: 12px 40px;
+            font-size: 1.2rem;
+            border-radius: 10px;
             cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
 
-    <h1>幸運轉盤抽獎</h1>
+    <div class="main-wrapper">
+        
+        <div class="game-container">
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas" width="800" height="800"></canvas>
+        </div>
 
-    <div class="game-container">
-        <div class="pointer"></div>
-        <canvas id="wheelCanvas" width="500" height="500"></canvas>
-    </div>
-
-    <div class="controls">
-        <button id="spinBtn" onclick="spinWheel()">開始抽獎</button>
+        <div class="info-panel controls">
+            <h1>🎄 聖誕好運轉出來 🎄</h1>
+            <button id="spinBtn" onclick="spinWheel()">立即開轉</button>
+            <br>
+            <button class="fullscreen-btn" onclick="toggleFullScreen()">切換全螢幕模式</button>
+        </div>
     </div>
 
     <div id="resultModal">
         <div class="modal-content">
-            <h2>🎉 恭喜獲得 🎉</h2>
+            <h2>🎉 聖誕快樂 恭喜獲得 🎉</h2>
             <div class="prize-title" id="modalPrizeName"></div>
             <div class="prize-desc" id="modalPrizeDesc"></div>
-            <button class="close-btn" onclick="closeModal()">確定</button>
+            <button class="close-btn" onclick="closeModal()">領取禮物</button>
         </div>
     </div>
 
     <script>
-        // --- 設定區 ---
-        // 確保順序與您的需求一致 (編號1~8)
+        // --- 設定區 (已調整為聖誕配色與新機率) ---
+        // color: 背景色, textColor: 文字色
         const prizes = [
-            { id: 1, text: "買一送一", fullText: "咖啡各品項買一送一\n（限當日）", prob: 0.15, color: "#FFDDC1" },
-            { id: 2, text: "鑰匙圈(吊橋)", fullText: "內灣限定壓克力鑰匙圈\n（吊橋款）", prob: 0.15, color: "#FFABAB" },
-            { id: 3, text: "米餅一片", fullText: "米餅一片", prob: 0.20, color: "#FFC3A0" },
-            { id: 4, text: "濾掛咖啡", fullText: "濾掛咖啡一包", prob: 0.10, color: "#D5AAFF" },
-            { id: 5, text: "美式一杯", fullText: "美式一杯（限當日）", prob: 0.08, color: "#85E3FF" },
-            { id: 6, text: "鑰匙圈(車站)", fullText: "內灣限定壓克力鑰匙圈\n（車站款）", prob: 0.15, color: "#B9F6CA" },
-            { id: 7, text: "折抵金40", fullText: "文創商品折抵金40元\n（限當日使用）", prob: 0.05, color: "#FFFFD1" },
-            { id: 8, text: "折抵金50", fullText: "全店商品折抵金50元\n（不限金額，不累加，限當日使用）", prob: 0.02, color: "#E2F0CB" }
+            { id: 1, text: "買一送一", fullText: "咖啡各品項買一送一", prob: 0.05, color: "#FBC02D", textColor: "#8B0000" }, // 金色 (大獎)
+            { id: 2, text: "鑰匙圈(吊橋)", fullText: "內灣限定壓克力鑰匙圈(吊橋款)", prob: 0.20, color: "#2E7D32", textColor: "#FFFFFF" }, // 綠色
+            { id: 3, text: "米餅一片", fullText: "米餅一片", prob: 0.30, color: "#C62828", textColor: "#FFFFFF" }, // 紅色
+            { id: 4, text: "濾掛咖啡", fullText: "濾掛咖啡一包", prob: 0.15, color: "#2E7D32", textColor: "#FFFFFF" }, // 綠色
+            { id: 5, text: "美式一杯", fullText: "美式一杯", prob: 0.05, color: "#C62828", textColor: "#FFFFFF" }, // 紅色
+            { id: 6, text: "鑰匙圈(車站)", fullText: "內灣限定壓克力鑰匙圈(車站款)", prob: 0.21, color: "#2E7D32", textColor: "#FFFFFF" }, // 綠色
+            { id: 7, text: "折抵金40", fullText: "文創商品折抵金40元(限當日)", prob: 0.02, color: "#FBC02D", textColor: "#8B0000" }, // 金色 (錢)
+            { id: 8, text: "折抵金50", fullText: "全店商品折抵金50元(不限金額)", prob: 0.02, color: "#C62828", textColor: "#FFFFFF" } // 紅色 (最大獎概念)
         ];
 
-        const totalProb = prizes.reduce((sum, item) => sum + item.prob, 0); // 總機率 0.9
+        const totalProb = prizes.reduce((sum, item) => sum + item.prob, 0);
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
-        const size = 500; 
+        const size = 800; // 提高解析度讓大螢幕看更清晰
         const centerX = size / 2;
         const centerY = size / 2;
-        const radius = size / 2;
+        const radius = size / 2 - 10; // 留邊距
         
-        let currentRotation = 0; // 紀錄目前轉盤的絕對角度
+        let currentRotation = 0;
         let isSpinning = false;
-        const sliceAngle = 360 / prizes.length; // 每個扇形的角度 (360/8 = 45度)
+        const sliceAngle = 360 / prizes.length;
 
-        // --- 繪製轉盤 ---
+        // --- 繪製轉盤 (優化版) ---
         function drawWheel() {
-            // Canvas 的 0 度通常在 3 點鐘方向。
-            // 為了方便計算，我們畫圖時從 -90度 (12點鐘) 開始畫第一個獎項。
-            const startAngleOffset = -Math.PI / 2; 
+            const startAngleOffset = -Math.PI / 2;
 
             prizes.forEach((prize, i) => {
-                // 將角度轉換為弧度
                 const startAngle = (i * sliceAngle) * (Math.PI / 180) + startAngleOffset;
                 const endAngle = ((i + 1) * sliceAngle) * (Math.PI / 180) + startAngleOffset;
 
@@ -213,95 +276,75 @@
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.fillStyle = prize.color;
                 ctx.fill();
+                
+                // 畫扇形邊框 (金色線條)
+                ctx.strokeStyle = "#F8B400";
+                ctx.lineWidth = 2;
                 ctx.stroke();
 
                 // 2. 畫文字
                 ctx.save();
                 ctx.translate(centerX, centerY);
-                // 文字轉到扇形中間
                 ctx.rotate(startAngle + (endAngle - startAngle) / 2);
                 ctx.textAlign = "right";
-                ctx.fillStyle = "#333";
-                ctx.font = "bold 24px sans-serif";
-                // 稍微往外推一點
-                ctx.fillText(prize.text, radius - 40, 10);
+                ctx.fillStyle = prize.textColor;
+                ctx.font = "bold 36px 'Microsoft JhengHei', sans-serif"; // 字體放大
+                
+                // 陰影提升閱讀性
+                if(prize.textColor === "#FFFFFF") {
+                    ctx.shadowColor = "rgba(0,0,0,0.3)";
+                    ctx.shadowBlur = 4;
+                }
+
+                ctx.fillText(prize.text, radius - 60, 12);
                 ctx.restore();
             });
         }
 
-        // --- 抽獎核心邏輯 ---
+        // --- 抽獎邏輯 ---
         function getPrizeIndex() {
             let random = Math.random() * totalProb;
             for (let i = 0; i < prizes.length; i++) {
-                if (random < prizes[i].prob) {
-                    return i;
-                }
+                if (random < prizes[i].prob) return i;
                 random -= prizes[i].prob;
             }
             return prizes.length - 1;
         }
 
-        // --- 旋轉功能 (精確計算版) ---
         function spinWheel() {
             if (isSpinning) return;
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
 
             const winningIndex = getPrizeIndex();
-            
-            // --- 角度計算說明 ---
-            // 1. 我們指針固定在上方 (0度 / 360度)。
-            // 2. 轉盤是順時針旋轉 (CSS rotate 增加)。
-            // 3. 畫圖時，獎品 0 是畫在 12點~1點半 (0~45度區間)。
-            // 4. 如果要讓 獎品 0 停在指針下，轉盤需要順時針轉動，讓這個區塊繞一圈回到 12點位置左邊? 
-            //    不對，想像轉盤順時針轉，獎品0會立刻離開12點往3點跑。
-            //    所以，要讓 獎品0 回到 12點，我們需要計算它「距離12點還有多遠」。
-            
-            // 公式：目標角度 = 360 - (該獎項的中心角度)
-            // 獎項0 中心在 22.5度 -> 目標轉到 337.5度 (讓22.5度那個點轉一圈回到0度)
             const prizeCenterAngle = (winningIndex * sliceAngle) + (sliceAngle / 2);
             
-            // 為了讓指針不要總是停在正中間，加入隨機偏移 (Jitter)
-            // 範圍控制在扇形的 80% 內，避免壓線爭議
+            // Jitter
             const halfSlice = sliceAngle / 2;
-            const safeZone = halfSlice * 0.8; 
-            const randomOffset = (Math.random() * 2 * safeZone) - safeZone; 
+            const safeZone = halfSlice * 0.8;
+            const randomOffset = (Math.random() * 2 * safeZone) - safeZone;
 
-            // 計算「這一次」需要轉到的絕對位置 (0~360度)
-            // 我們希望指針停在 (360 - prizeCenterAngle + randomOffset) 的位置
             let targetAngleRelativeToZero = (360 - prizeCenterAngle) + randomOffset;
-
-            // 確保 targetAngleRelativeToZero 是正數
             while (targetAngleRelativeToZero < 0) targetAngleRelativeToZero += 360;
 
-            // 計算目前轉盤實際角度 (模360)
             const currentMod = currentRotation % 360;
-            
-            // 計算「還需要轉多少度」才能到達目標 (必須是正數，保證順時針)
             let distanceToTarget = targetAngleRelativeToZero - currentMod;
-            if (distanceToTarget < 0) {
-                distanceToTarget += 360;
-            }
+            if (distanceToTarget < 0) distanceToTarget += 360;
 
-            // 加上額外的旋轉圈數 (至少 5 圈 = 1800度)，製造緊張感
-            const extraSpins = 360 * 5;
-            
-            // 最終目標旋轉角度 (累加)
+            const extraSpins = 360 * 8; // 8圈
             const finalRotation = currentRotation + extraSpins + distanceToTarget;
 
-            // 設定 CSS 動畫時間與曲線
-            canvas.style.transition = 'transform 4s cubic-bezier(0.2, 0.8, 0.3, 0.99)';
+            // 8秒緩慢停下
+            canvas.style.transition = 'transform 8s cubic-bezier(0.1, 0.7, 0.1, 1)';
             canvas.style.transform = `rotate(${finalRotation}deg)`;
             
-            // 更新狀態
             currentRotation = finalRotation;
 
-            // 監聽動畫結束
             setTimeout(() => {
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
                 showResult(prizes[winningIndex]);
-            }, 4000);
+            }, 8000);
         }
 
         function showResult(prize) {
@@ -312,6 +355,19 @@
 
         function closeModal() {
             document.getElementById('resultModal').style.display = 'none';
+        }
+
+        // 全螢幕功能
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
         }
 
         // 初始化
