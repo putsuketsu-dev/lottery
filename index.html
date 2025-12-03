@@ -18,19 +18,18 @@
             color: white;
             margin: 0;
             padding: 0;
-            height: 100vh; /* 佔滿全螢幕高度 */
+            height: 100vh;
             width: 100vw;
-            overflow: hidden; /* 禁止捲動 */
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
 
-        /* 主容器：負責排版 */
         .main-wrapper {
             display: flex;
-            flex-direction: column; /* 預設直向 */
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100%;
@@ -45,31 +44,28 @@
             text-align: center;
         }
 
-        /* 轉盤容器 */
         .game-container {
             position: relative;
-            /* 關鍵：使用 vmin 單位，確保轉盤永遠不會超出螢幕短邊 */
             width: 80vmin; 
             height: 80vmin;
             max-width: 500px;
             max-height: 500px;
             margin: 10px auto;
-            flex-shrink: 0; /* 防止被擠壓 */
+            flex-shrink: 0;
         }
 
         #wheelCanvas {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); /* 金色光暈 */
-            border: 8px solid #F8B400; /* 金色外框 */
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            border: 8px solid #F8B400;
             box-sizing: border-box;
         }
 
-        /* 指針 */
         .pointer {
             position: absolute;
-            top: -15%; /* 根據相對位置調整 */
+            top: -15%;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -81,7 +77,6 @@
             filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
         }
 
-        /* 控制區 */
         .controls {
             text-align: center;
             margin-top: 10px;
@@ -115,7 +110,6 @@
             cursor: not-allowed;
         }
 
-        /* 全螢幕按鈕 (小小的放在角落或下方) */
         .fullscreen-btn {
             background: transparent;
             border: 1px solid rgba(255,255,255,0.3);
@@ -126,16 +120,14 @@
             cursor: pointer;
         }
 
-        /* --- 橫向模式 (Landscape) 專用佈局 --- */
         @media (orientation: landscape) {
             .main-wrapper {
-                flex-direction: row; /* 改為左右排列 */
+                flex-direction: row;
                 justify-content: space-evenly;
                 gap: 20px;
             }
 
             .game-container {
-                /* 橫向時，轉盤佔據高度的 85% */
                 width: 85vh;
                 height: 85vh;
                 margin: 0;
@@ -155,7 +147,7 @@
             }
         }
 
-        /* 結果彈窗 */
+        /* --- 結果彈窗樣式修改 --- */
         #resultModal {
             display: none;
             position: fixed;
@@ -163,7 +155,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85); /* 背景更黑一點，凸顯內容 */
             z-index: 100;
             justify-content: center;
             align-items: center;
@@ -171,48 +163,68 @@
         }
 
         .modal-content {
-            background: linear-gradient(135deg, #fff, #f0f0f0);
+            background: linear-gradient(135deg, #fff, #f8f8f8);
             padding: 30px;
             border-radius: 20px;
             text-align: center;
             max-width: 80%;
-            width: 400px;
+            width: 450px;
             box-shadow: 0 0 50px rgba(255, 215, 0, 0.4);
-            border: 4px solid #D32F2F;
+            border: 5px solid #D32F2F;
             color: #333;
+            position: relative;
         }
 
         .prize-title {
-            font-size: 1.8rem;
+            font-size: 2rem;
             color: #D32F2F;
-            margin: 15px 0;
+            margin: 10px 0;
             font-weight: bold;
         }
 
         .prize-desc {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        /* 新增：給店員看的警示框 */
+        .staff-check-box {
+            background-color: #FFF3E0;
+            border: 2px dashed #FF9800;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .staff-check-text {
+            color: #E65100;
+            font-weight: bold;
             font-size: 1.1rem;
-            color: #555;
-            margin-bottom: 25px;
-            line-height: 1.6;
-            white-space: pre-wrap;
+            line-height: 1.5;
         }
 
         .close-btn {
-            background: #2E7D32;
+            background: #757575; /* 改成灰色，降低點擊慾望 */
             color: white;
             border: none;
-            padding: 12px 40px;
-            font-size: 1.2rem;
-            border-radius: 10px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: background 0.3s;
         }
+        
+        .close-btn:hover {
+            background: #424242;
+        }
+
     </style>
 </head>
 <body>
 
     <div class="main-wrapper">
-        
         <div class="game-container">
             <div class="pointer"></div>
             <canvas id="wheelCanvas" width="800" height="800"></canvas>
@@ -228,41 +240,50 @@
 
     <div id="resultModal">
         <div class="modal-content">
-            <h2>🎉 聖誕快樂 恭喜獲得 🎉</h2>
+            <h2>🎉 恭喜獲得 🎉</h2>
+            
             <div class="prize-title" id="modalPrizeName"></div>
             <div class="prize-desc" id="modalPrizeDesc"></div>
-            <button class="close-btn" onclick="closeModal()">領取禮物</button>
+            
+            <div class="staff-check-box">
+                <div class="staff-check-text">
+                    ⚠️ 請保留此畫面<br>
+                    出示給店員核銷兌換
+                </div>
+                <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                    (核銷前請勿關閉視窗)
+                </div>
+            </div>
+
+            <button class="close-btn" onclick="closeModal()">店員核銷完成 (關閉)</button>
         </div>
     </div>
 
     <script>
-        // --- 設定區 (已調整為聖誕配色與新機率) ---
-        // color: 背景色, textColor: 文字色
         const prizes = [
-            { id: 1, text: "買一送一", fullText: "咖啡各品項買一送一", prob: 0.05, color: "#FBC02D", textColor: "#8B0000" }, // 金色 (大獎)
-            { id: 2, text: "鑰匙圈(吊橋)", fullText: "內灣限定壓克力鑰匙圈(吊橋款)", prob: 0.20, color: "#2E7D32", textColor: "#FFFFFF" }, // 綠色
-            { id: 3, text: "米餅一片", fullText: "米餅一片", prob: 0.30, color: "#C62828", textColor: "#FFFFFF" }, // 紅色
-            { id: 4, text: "濾掛咖啡", fullText: "濾掛咖啡一包", prob: 0.15, color: "#2E7D32", textColor: "#FFFFFF" }, // 綠色
-            { id: 5, text: "美式一杯", fullText: "美式一杯", prob: 0.05, color: "#C62828", textColor: "#FFFFFF" }, // 紅色
-            { id: 6, text: "鑰匙圈(車站)", fullText: "內灣限定壓克力鑰匙圈(車站款)", prob: 0.21, color: "#2E7D32", textColor: "#FFFFFF" }, // 綠色
-            { id: 7, text: "折抵金40", fullText: "文創商品折抵金40元(限當日)", prob: 0.02, color: "#FBC02D", textColor: "#8B0000" }, // 金色 (錢)
-            { id: 8, text: "折抵金50", fullText: "全店商品折抵金50元(不限金額)", prob: 0.02, color: "#C62828", textColor: "#FFFFFF" } // 紅色 (最大獎概念)
+            { id: 1, text: "買一送一", fullText: "咖啡各品項買一送一", prob: 0.05, color: "#FBC02D", textColor: "#8B0000" },
+            { id: 2, text: "鑰匙圈(吊橋)", fullText: "內灣限定壓克力鑰匙圈(吊橋款)", prob: 0.20, color: "#2E7D32", textColor: "#FFFFFF" },
+            { id: 3, text: "米餅一片", fullText: "米餅一片", prob: 0.30, color: "#C62828", textColor: "#FFFFFF" },
+            { id: 4, text: "濾掛咖啡", fullText: "濾掛咖啡一包", prob: 0.15, color: "#2E7D32", textColor: "#FFFFFF" },
+            { id: 5, text: "美式一杯", fullText: "美式一杯", prob: 0.05, color: "#C62828", textColor: "#FFFFFF" },
+            { id: 6, text: "鑰匙圈(車站)", fullText: "內灣限定壓克力鑰匙圈(車站款)", prob: 0.21, color: "#2E7D32", textColor: "#FFFFFF" },
+            { id: 7, text: "折抵金40", fullText: "文創商品折抵金40元(限當日)", prob: 0.02, color: "#FBC02D", textColor: "#8B0000" },
+            { id: 8, text: "折抵金50", fullText: "全店商品折抵金50元(不限金額)", prob: 0.02, color: "#C62828", textColor: "#FFFFFF" }
         ];
 
         const totalProb = prizes.reduce((sum, item) => sum + item.prob, 0);
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
-        const size = 800; // 提高解析度讓大螢幕看更清晰
+        const size = 800;
         const centerX = size / 2;
         const centerY = size / 2;
-        const radius = size / 2 - 10; // 留邊距
+        const radius = size / 2 - 10;
         
         let currentRotation = 0;
         let isSpinning = false;
         const sliceAngle = 360 / prizes.length;
 
-        // --- 繪製轉盤 (優化版) ---
         function drawWheel() {
             const startAngleOffset = -Math.PI / 2;
 
@@ -270,27 +291,23 @@
                 const startAngle = (i * sliceAngle) * (Math.PI / 180) + startAngleOffset;
                 const endAngle = ((i + 1) * sliceAngle) * (Math.PI / 180) + startAngleOffset;
 
-                // 1. 畫扇形
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.fillStyle = prize.color;
                 ctx.fill();
                 
-                // 畫扇形邊框 (金色線條)
                 ctx.strokeStyle = "#F8B400";
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // 2. 畫文字
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 ctx.rotate(startAngle + (endAngle - startAngle) / 2);
                 ctx.textAlign = "right";
                 ctx.fillStyle = prize.textColor;
-                ctx.font = "bold 36px 'Microsoft JhengHei', sans-serif"; // 字體放大
+                ctx.font = "bold 36px 'Microsoft JhengHei', sans-serif";
                 
-                // 陰影提升閱讀性
                 if(prize.textColor === "#FFFFFF") {
                     ctx.shadowColor = "rgba(0,0,0,0.3)";
                     ctx.shadowBlur = 4;
@@ -301,7 +318,6 @@
             });
         }
 
-        // --- 抽獎邏輯 ---
         function getPrizeIndex() {
             let random = Math.random() * totalProb;
             for (let i = 0; i < prizes.length; i++) {
@@ -319,7 +335,6 @@
             const winningIndex = getPrizeIndex();
             const prizeCenterAngle = (winningIndex * sliceAngle) + (sliceAngle / 2);
             
-            // Jitter
             const halfSlice = sliceAngle / 2;
             const safeZone = halfSlice * 0.8;
             const randomOffset = (Math.random() * 2 * safeZone) - safeZone;
@@ -331,10 +346,9 @@
             let distanceToTarget = targetAngleRelativeToZero - currentMod;
             if (distanceToTarget < 0) distanceToTarget += 360;
 
-            const extraSpins = 360 * 8; // 8圈
+            const extraSpins = 360 * 8; 
             const finalRotation = currentRotation + extraSpins + distanceToTarget;
 
-            // 8秒緩慢停下
             canvas.style.transition = 'transform 8s cubic-bezier(0.1, 0.7, 0.1, 1)';
             canvas.style.transform = `rotate(${finalRotation}deg)`;
             
@@ -354,15 +368,15 @@
         }
 
         function closeModal() {
-            document.getElementById('resultModal').style.display = 'none';
+            // 可選：加上二次確認，防止店員操作時手滑
+            if(confirm("確定已核銷獎品並關閉視窗嗎？")) {
+                document.getElementById('resultModal').style.display = 'none';
+            }
         }
 
-        // 全螢幕功能
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-                });
+                document.documentElement.requestFullscreen().catch(err => {});
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
@@ -370,7 +384,6 @@
             }
         }
 
-        // 初始化
         drawWheel();
 
     </script>
