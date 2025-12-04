@@ -147,7 +147,6 @@
             }
         }
 
-        /* --- 結果彈窗樣式修改 --- */
         #resultModal {
             display: none;
             position: fixed;
@@ -155,7 +154,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85); /* 背景更黑一點，凸顯內容 */
+            background: rgba(0,0,0,0.85);
             z-index: 100;
             justify-content: center;
             align-items: center;
@@ -189,7 +188,6 @@
             font-weight: bold;
         }
 
-        /* 新增：給店員看的警示框 */
         .staff-check-box {
             background-color: #FFF3E0;
             border: 2px dashed #FF9800;
@@ -206,7 +204,7 @@
         }
 
         .close-btn {
-            background: #757575; /* 改成灰色，降低點擊慾望 */
+            background: #757575;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -241,7 +239,6 @@
     <div id="resultModal">
         <div class="modal-content">
             <h2>🎉 恭喜獲得 🎉</h2>
-            
             <div class="prize-title" id="modalPrizeName"></div>
             <div class="prize-desc" id="modalPrizeDesc"></div>
             
@@ -260,6 +257,7 @@
     </div>
 
     <script>
+        // --- 設定區 ---
         const prizes = [
             { id: 1, text: "買一送一", fullText: "咖啡各品項買一送一", prob: 0.05, color: "#FBC02D", textColor: "#8B0000" },
             { id: 2, text: "鑰匙圈(吊橋)", fullText: "內灣限定壓克力鑰匙圈(吊橋款)", prob: 0.20, color: "#2E7D32", textColor: "#FFFFFF" },
@@ -272,6 +270,14 @@
         ];
 
         const totalProb = prizes.reduce((sum, item) => sum + item.prob, 0);
+
+        // --- 音效設定 (使用 CDN 連結以確保讀取順利) ---
+        // 轉動中音效
+        const spinSound = new Audio("https://raw.githubusercontent.com/putsuketsu-dev/lottery/main/turnsound.wav");
+        spinSound.loop = true; // 設定循環播放
+
+        // 中獎音效
+        const winSound = new Audio("https://raw.githubusercontent.com/putsuketsu-dev/lottery/main/winsound.mp3");
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
@@ -332,6 +338,21 @@
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
 
+            // --- 音效處理區塊 Start ---
+            
+            // 1. 播放轉動音效
+            spinSound.currentTime = 0;
+            spinSound.play().catch(error => console.log("播放失敗，請檢查瀏覽器設定:", error));
+
+            // 2. 為了應對 iOS/Android 限制，我們先"解鎖"中獎音效
+            // 播放它然後立刻暫停，這樣 8 秒後程式呼叫它時才不會被擋
+            winSound.play().then(() => {
+                winSound.pause();
+                winSound.currentTime = 0;
+            }).catch(error => console.log("中獎音效預載失敗:", error));
+            
+            // --- 音效處理區塊 End ---
+
             const winningIndex = getPrizeIndex();
             const prizeCenterAngle = (winningIndex * sliceAngle) + (sliceAngle / 2);
             
@@ -354,9 +375,18 @@
             
             currentRotation = finalRotation;
 
+            // 8秒後停止
             setTimeout(() => {
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
+                
+                // 停止轉動音效
+                spinSound.pause();
+                spinSound.currentTime = 0;
+
+                // 播放中獎音效
+                winSound.play().catch(e => console.log(e));
+
                 showResult(prizes[winningIndex]);
             }, 8000);
         }
@@ -368,9 +398,11 @@
         }
 
         function closeModal() {
-            // 可選：加上二次確認，防止店員操作時手滑
             if(confirm("確定已核銷獎品並關閉視窗嗎？")) {
                 document.getElementById('resultModal').style.display = 'none';
+                // 關閉視窗時也確保音效停止
+                winSound.pause();
+                winSound.currentTime = 0;
             }
         }
 
